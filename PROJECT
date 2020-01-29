@@ -1,0 +1,7 @@
+domain: phillebaba.io
+repo: github.com/phillebaba/kubernetes-generated-secret
+resources:
+- group: core
+  kind: GeneratedSecret
+  version: v1alpha1
+version: "2"
