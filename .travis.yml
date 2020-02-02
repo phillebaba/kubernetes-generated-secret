@@ -1,7 +1,7 @@
 services: docker
 language: go
 go:
-- 1.12
+- 1.13
 
 script:
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
