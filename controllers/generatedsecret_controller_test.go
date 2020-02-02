@@ -17,10 +17,12 @@ package controllers
 
 import (
 	"context"
+	"encoding/base64"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -28,7 +30,7 @@ import (
 )
 
 var _ = Describe("Generated Secret Controller", func() {
-	const timeout = time.Second * 30
+	const timeout = time.Second * 10
 	const interval = time.Second * 1
 
 	BeforeEach(func() {
@@ -46,18 +48,27 @@ var _ = Describe("Generated Secret Controller", func() {
 				Namespace: "default",
 			}
 
+			length := int(8)
 			created := &corev1alpha1.GeneratedSecret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: key.Namespace,
 				},
 				Spec: corev1alpha1.GeneratedSecretSpec{
-					DataList: []corev1alpha1.GeneratedSecretData{corev1alpha1.GeneratedSecretData{Key: "foo"}},
+					DataList: []corev1alpha1.GeneratedSecretData{corev1alpha1.GeneratedSecretData{Length: &length, Key: "foo"}},
 				},
 			}
 
 			// Create
 			Expect(k8sClient.Create(context.Background(), created)).Should(Succeed())
+
+			// Get generated secret
+			Eventually(func() bool {
+				f := &corev1.Secret{}
+				k8sClient.Get(context.Background(), key, f)
+				decoded, _ := base64.StdEncoding.DecodeString(string(f.Data["foo"]))
+				return len(string(decoded)) == length
+			}, timeout, interval).Should(BeTrue())
 
 			// Delete
 			By("Expecting to delete successfully")

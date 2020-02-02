@@ -19,7 +19,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
+	"math/big"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -32,19 +32,24 @@ import (
 	corev1alpha1 "github.com/phillebaba/kubernetes-generated-secret/api/v1alpha1"
 )
 
-func generateRandomBytes(n int) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	if err != nil {
-		return nil, err
+// https://gist.github.com/denisbrodbeck/635a644089868a51eccd6ae22b2eb800
+func generateRandomASCIIString(length int) (string, error) {
+	result := ""
+	for {
+		if len(result) >= length {
+			return result, nil
+		}
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(127)))
+		if err != nil {
+			return "", err
+		}
+		n := num.Int64()
+		// Make sure that the number/byte/letter is inside
+		// the range of printable ASCII characters (excluding space and DEL)
+		if n > 32 && n < 127 {
+			result += string(n)
+		}
 	}
-
-	return b, nil
-}
-
-func generateRandomString(s int) (string, error) {
-	b, err := generateRandomBytes(s)
-	return base64.URLEncoding.EncodeToString(b), err
 }
 
 // GeneratedSecretReconciler reconciles a GeneratedSecret object
@@ -81,12 +86,13 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 		return ctrl.Result{}, err
 	}
 
-	// Gernete secrets
-	sd := make(map[string]string)
+	// Generate secrets
+	secretData := make(map[string][]byte)
 	for _, d := range gs.Spec.DataList {
-		fmt.Printf("%v\n\n", d)
-		randString, _ := generateRandomString(*d.Length)
-		sd[d.Key] = randString
+		log.Info("secret", "", d)
+		randString, _ := generateRandomASCIIString(*d.Length)
+		randString = base64.URLEncoding.EncodeToString([]byte(randString))
+		secretData[d.Key] = []byte(randString)
 	}
 
 	// Create secret resource
@@ -97,7 +103,7 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 			Name:        gs.Name,
 			Namespace:   gs.Namespace,
 		},
-		StringData: sd,
+		Data: secretData,
 	}
 
 	if err := ctrl.SetControllerReference(&gs, s, r.Scheme); err != nil {
