@@ -3,6 +3,13 @@ language: go
 go:
 - 1.13
 
+install:
+  - os=$(go env GOOS)
+  - arch=$(go env GOARCH)
+  - curl -L https://go.kubebuilder.io/dl/2.2.0/${os}/${arch} | tar -xz -C /tmp/
+  - mv /tmp/kubebuilder_2.2.0_${os}_${arch} /usr/local/kubebuilder
+  - export PATH=$PATH:/usr/local/kubebuilder/bin
+
 script:
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - make docker-build
