@@ -38,6 +38,11 @@ func (r *GeneratedSecret) Default() {
 	generatedsecretlog.Info("default", "name", r.Name)
 
 	for _, d := range r.Spec.DataList {
+		if d.Length == nil {
+			length := int(8)
+			d.Length = &length
+		}
+
 		if d.Letters == nil {
 			d.Letters = new(bool)
 		}
