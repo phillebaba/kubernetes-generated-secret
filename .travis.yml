@@ -1,7 +1,7 @@
-services: docker
 language: go
+services: docker
 
 script:
-  - make test
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - make docker-build
   - make docker-push
