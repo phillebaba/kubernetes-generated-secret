@@ -1,3 +1,4 @@
+sudo: true
 services: docker
 language: go
 go:
@@ -7,7 +8,7 @@ install:
   - os=$(go env GOOS)
   - arch=$(go env GOARCH)
   - curl -L https://go.kubebuilder.io/dl/2.2.0/${os}/${arch} | tar -xz -C /tmp/
-  - mv /tmp/kubebuilder_2.2.0_${os}_${arch} /usr/local/kubebuilder
+  - sudo mv /tmp/kubebuilder_2.2.0_${os}_${arch} /usr/local/kubebuilder
   - export PATH=$PATH:/usr/local/kubebuilder/bin
 
 script:
