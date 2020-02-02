@@ -30,7 +30,7 @@ import (
 )
 
 var _ = Describe("Generated Secret Controller", func() {
-	const timeout = time.Second * 10
+	const timeout = time.Second * 30
 	const interval = time.Second * 1
 
 	BeforeEach(func() {
@@ -63,6 +63,7 @@ var _ = Describe("Generated Secret Controller", func() {
 			Expect(k8sClient.Create(context.Background(), created)).Should(Succeed())
 
 			// Get generated secret
+			By("Expecting secret to be created")
 			Eventually(func() bool {
 				f := &corev1.Secret{}
 				k8sClient.Get(context.Background(), key, f)

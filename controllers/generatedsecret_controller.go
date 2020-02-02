@@ -69,11 +69,8 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 	// Get the reconciled GeneratedSecret
 	var gs corev1alpha1.GeneratedSecret
 	if err := r.Get(ctx, req.NamespacedName, &gs); err != nil {
-		if apierrs.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-
-		return ctrl.Result{}, err
+		log.Error(err, "unable to fetch GeneratedSecret")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	// Make sure secret does not already exist
@@ -86,10 +83,9 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 		return ctrl.Result{}, err
 	}
 
-	// Generate secrets
+	// Generate secrets values
 	secretData := make(map[string][]byte)
 	for _, d := range gs.Spec.DataList {
-		log.Info("secret", "", d)
 		randString, _ := generateRandomASCIIString(*d.Length)
 		randString = base64.URLEncoding.EncodeToString([]byte(randString))
 		secretData[d.Key] = []byte(randString)
