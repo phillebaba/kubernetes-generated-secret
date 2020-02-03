@@ -4,7 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/phillebaba/kubernetes-generated-secret)](https://goreportcard.com/report/github.com/phillebaba/kubernetes-generated-secret)
 [![Docker Pulls](https://img.shields.io/docker/pulls/phillebaba/kubernetes-generated-secret)](https://hub.docker.com/r/phillebaba/kubernetes-generated-secret)
 
-Controller to easily generate random secret values.
+Kubernetes controller to easily generate random secrets inside your cluster.
 
 ## Install
 Add the CRD to the cluster.
@@ -18,16 +18,50 @@ kustomize build config/default | kubectl apply -f -
 ```
 
 ## How to use
-### Create a new random secret
+A `Secret` is generated from a `GeneratedSecret` that configures the length, character content, and additional metadata of the secret. The `GeneratedSecret` is the parent of the `Secret` it creates, meaning that the `Secret` will be deleted when the `GeneratedSecret` is deleted.
+
+### Simple random secret
 ```yaml
+apiVersion: core.phillebaba.io/v1alpha1
+kind: GeneratedSecret
+metadata:
+  name: generatedsecret-sample
+spec:
+  data:
+  - key: test
 ```
 
 ### Constrain secret generation
 ```yaml
+apiVersion: core.phillebaba.io/v1alpha1
+kind: GeneratedSecret
+metadata:
+  name: generatedsecret-sample
+spec:
+  data:
+  - key: test
+    length: 10
+    letters: true
+    numbers: false
+    special: false
 ```
 
 ### Multiple secrets
 ```yaml
+apiVersion: core.phillebaba.io/v1alpha1
+kind: GeneratedSecret
+metadata:
+  name: generatedsecret-sample
+spec:
+  data:
+  - key: foo
+    length: 10
+    numbers: false
+  - key: bar
+    length: 100
+    letters: true
+    numbers: true
+    special: true
 ```
 
 ## Development
