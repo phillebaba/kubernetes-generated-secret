@@ -55,7 +55,7 @@ var _ = Describe("Generated Secret Controller", func() {
 					Namespace: key.Namespace,
 				},
 				Spec: corev1alpha1.GeneratedSecretSpec{
-					DataList: []corev1alpha1.GeneratedSecretData{corev1alpha1.GeneratedSecretData{Length: &length, Key: "foo"}},
+					DataList: []corev1alpha1.GeneratedSecretData{{Length: &length, Key: "foo"}},
 				},
 			}
 
