@@ -3,6 +3,8 @@ services: docker
 language: go
 go:
 - 1.13
+git:
+  depth: 50
 
 install:
   - os=$(go env GOOS)
