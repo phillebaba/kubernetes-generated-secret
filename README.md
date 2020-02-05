@@ -7,12 +7,15 @@
 Kubernetes controller to easily generate random secrets inside your cluster.
 
 ## Install
-Add the CRD to the cluster.
-```bash
-kustomzie build config/crd | kubectl apply -f -
+Easiest way is to add a git reference in your `kustomization.yaml` file.
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- github.com/phillebaba/kubernetes-generated-secret//config/default
 ```
 
-Deploy the controller in your cluster
+Or you can add the CRD and Deploy the controller in your cluster manually.
 ```bash
 kustomize build config/default | kubectl apply -f -
 ```
