@@ -56,6 +56,12 @@ var _ = Describe("Generated Secret Controller", func() {
 				},
 				Spec: corev1alpha1.GeneratedSecretSpec{
 					DataList: []corev1alpha1.GeneratedSecretData{{Length: &length, Key: "foo"}},
+					SecretMeta: metav1.ObjectMeta{
+						Name:        "try to override",
+						Namespace:   "dummy",
+						Labels:      map[string]string{"test": "label"},
+						Annotations: map[string]string{"test": "annotations"},
+					},
 				},
 			}
 
@@ -64,12 +70,16 @@ var _ = Describe("Generated Secret Controller", func() {
 
 			// Get generated secret
 			By("Expecting secret to be created")
+			f := &corev1.Secret{}
 			Eventually(func() bool {
-				f := &corev1.Secret{}
 				k8sClient.Get(context.Background(), key, f)
 				decoded, _ := base64.StdEncoding.DecodeString(string(f.Data["foo"]))
 				return len(string(decoded)) == length
 			}, timeout, interval).Should(BeTrue())
+			Expect(f.ObjectMeta.Name).To(Equal(key.Name))
+			Expect(f.ObjectMeta.Namespace).To(Equal(key.Namespace))
+			Expect(f.ObjectMeta.Labels).To(Equal(created.Spec.SecretMeta.Labels))
+			Expect(f.ObjectMeta.Annotations).To(Equal(created.Spec.SecretMeta.Annotations))
 
 			// Delete
 			By("Expecting to delete successfully")

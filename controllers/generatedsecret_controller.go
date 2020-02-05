@@ -24,7 +24,6 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -92,14 +91,12 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 	}
 
 	// Create secret resource
+	omc := *gs.Spec.SecretMeta.DeepCopy()
+	omc.Name = gs.Name
+	omc.Namespace = gs.Namespace
 	s := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels:      make(map[string]string),
-			Annotations: make(map[string]string),
-			Name:        gs.Name,
-			Namespace:   gs.Namespace,
-		},
-		Data: secretData,
+		ObjectMeta: omc,
+		Data:       secretData,
 	}
 
 	if err := ctrl.SetControllerReference(&gs, s, r.Scheme); err != nil {

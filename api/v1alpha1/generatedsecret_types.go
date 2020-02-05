@@ -44,6 +44,10 @@ type GeneratedSecretData struct {
 // GeneratedSecretSpec defines the desired state of GeneratedSecret
 type GeneratedSecretSpec struct {
 	DataList []GeneratedSecretData `json:"data"`
+
+	// Addtional metadata to add to the generated secret.
+	// +optional
+	SecretMeta metav1.ObjectMeta `json:"secretMetadata,omitempty"`
 }
 
 // GeneratedSecretStatus defines the observed state of GeneratedSecret
