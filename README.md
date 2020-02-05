@@ -21,6 +21,35 @@ kustomize build config/default | kubectl apply -f -
 A `Secret` is generated from a `GeneratedSecret` that configures the length, character content, and additional metadata of the secret. The `GeneratedSecret` is the parent of the `Secret` it creates, meaning that the `Secret` will be deleted when the `GeneratedSecret` is deleted.
 
 ### Simple random secret
+Below is all you need to generate a `Secret` with a random value. It contains a data field in the spec that specifies the key then generated value should have. Also in the example below an optional `secretMetadata` has been added. The metadata specified will propogate to the generated `Secret` with the exception of the name and namespace which is inherited by the parent `GeneratedSecret`.
+```yaml
+apiVersion: core.phillebaba.io/v1alpha1
+kind: GeneratedSecret
+metadata:
+  name: generatedsecret-sample
+spec:
+  secretMetadata:
+    labels:
+      app: foobar
+  data:
+  - key: test
+```
+
+The resulting `Secret` will look like shown below.
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: generatedsecret-sample
+  labels:
+    app: foobar
+spec:
+  data:
+    test: <RANDOM_VALUE>
+```
+
+### Multiple secrets
+It is also possible to generate a `Secret` with multiple keys in it.
 ```yaml
 apiVersion: core.phillebaba.io/v1alpha1
 kind: GeneratedSecret
@@ -28,10 +57,26 @@ metadata:
   name: generatedsecret-sample
 spec:
   data:
-  - key: test
+  - key: foo
+  - key: bar
+```
+
+Each key will receive a different random value.
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: generatedsecret-sample
+  labels:
+    app: foobar
+spec:
+  data:
+    foo: <RANDOM_VALUE_1>
+    bar: <RANDOM_VALUE_2>
 ```
 
 ### Constrain secret generation
+You can also add constraints to how the secret is generated, as everybody requirements differ and some legacy systems may not tolerate certain characters. These constraints include length, uppercase, lowercase, digits, and special charaters.
 ```yaml
 apiVersion: core.phillebaba.io/v1alpha1
 kind: GeneratedSecret
@@ -44,24 +89,6 @@ spec:
     letters: true
     numbers: false
     special: false
-```
-
-### Multiple secrets
-```yaml
-apiVersion: core.phillebaba.io/v1alpha1
-kind: GeneratedSecret
-metadata:
-  name: generatedsecret-sample
-spec:
-  data:
-  - key: foo
-    length: 10
-    numbers: false
-  - key: bar
-    length: 100
-    letters: true
-    numbers: true
-    special: true
 ```
 
 ## Development
