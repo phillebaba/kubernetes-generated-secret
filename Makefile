@@ -1,4 +1,5 @@
-TAG = $(shell git symbolic-ref -q --short HEAD || git describe --tags --exact-match)
+TAG = $(shell git describe --tags --exact-match || git rev-parse HEAD)
+#TAG = $(shell git symbolic-ref -q --short HEAD || git describe --tags --exact-match)
 IMG ?= phillebaba/kubernetes-generated-secret:$(TAG)
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
