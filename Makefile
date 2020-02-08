@@ -1,5 +1,4 @@
-TAG = $(shell git describe --tags --exact-match || git rev-parse HEAD)
-#TAG = $(shell git symbolic-ref -q --short HEAD || git describe --tags --exact-match)
+TAG = $(shell git describe --exact-match | git describe --always --dirty)
 IMG ?= phillebaba/kubernetes-generated-secret:$(TAG)
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -41,7 +40,7 @@ deploy: manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
 fmt:

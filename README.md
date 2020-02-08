@@ -4,7 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/phillebaba/kubernetes-generated-secret)](https://goreportcard.com/report/github.com/phillebaba/kubernetes-generated-secret)
 [![Docker Pulls](https://img.shields.io/docker/pulls/phillebaba/kubernetes-generated-secret)](https://hub.docker.com/r/phillebaba/kubernetes-generated-secret)
 
-Kubernetes controller to easily generate random secrets inside your cluster.
+Kubernetes controller to easily generate random secrets inside your cluster. The project makes use of [`crypto/rand`](https://golang.org/pkg/crypto/rand/) to generate random values.
 
 ## Install
 Easiest way is to add a git reference in your `kustomization.yaml` file.
@@ -24,7 +24,25 @@ kustomize build config/default | kubectl apply -f -
 A `Secret` is generated from a `GeneratedSecret` that configures the length, character content, and additional metadata of the secret. The `GeneratedSecret` is the parent of the `Secret` it creates, meaning that the `Secret` will be deleted when the `GeneratedSecret` is deleted.
 
 ### Simple random secret
-Below is all you need to generate a `Secret` with a random value. It contains a data field in the spec that specifies the key then generated value should have. Also in the example below an optional `secretMetadata` has been added. The metadata specified will propogate to the generated `Secret` with the exception of the name and namespace which is inherited by the parent `GeneratedSecret`.
+Below is all you need to generate a `Secret` with a random value. It contains a data field in the spec that specifies the key length and value options for the generated value.
+```yaml
+apiVersion: core.phillebaba.io/v1alpha1
+kind: GeneratedSecret
+metadata:
+  name: generatedsecret-sample
+spec:
+  data:
+  - key: test
+    length: 100
+    options:
+      - Uppercase
+      - Lowercase
+      - Numbers
+      - Symbols
+```
+
+### Secret metadata
+There is an optional `secretMetadata` that can be set. The metadata specified will propogate to the generated `Secret` with the exception of the name and namespace which is inherited by the parent `GeneratedSecret`.
 ```yaml
 apiVersion: core.phillebaba.io/v1alpha1
 kind: GeneratedSecret
@@ -36,6 +54,12 @@ spec:
       app: foobar
   data:
   - key: test
+    length: 100
+    options:
+      - Uppercase
+      - Lowercase
+      - Numbers
+      - Symbols
 ```
 
 The resulting `Secret` will look like shown below.
@@ -61,7 +85,15 @@ metadata:
 spec:
   data:
   - key: foo
+    length: 100
+    options:
+      - Uppercase
+      - Lowercase
   - key: bar
+    length: 50
+    options:
+      - Numbers
+      - Symbols
 ```
 
 Each key will receive a different random value.
@@ -78,22 +110,6 @@ spec:
     bar: <RANDOM_VALUE_2>
 ```
 
-### Constrain secret generation
-You can also add constraints to how the secret is generated, as everybody requirements differ and some legacy systems may not tolerate certain characters. These constraints include length, uppercase, lowercase, digits, and special charaters.
-```yaml
-apiVersion: core.phillebaba.io/v1alpha1
-kind: GeneratedSecret
-metadata:
-  name: generatedsecret-sample
-spec:
-  data:
-  - key: test
-    length: 10
-    letters: true
-    numbers: false
-    special: false
-```
-
 ## Development
 The project is setup with [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) so it is good to install it as the integration tests depend on it, follow the [installation instructions](https://book.kubebuilder.io/quick-start.html#installation).
 
@@ -102,9 +118,8 @@ To simplify development it helps to use a local cluster, [Kind](https://github.c
 make install
 ```
 
-Then run the controller, the following command will run the controller binary. Make sure to disable any webhooks as they will not work when running outside of the cluster.
+Then run the controller, the following command will run the controller binary.
 ```bash
-export ENABLE_WEBHOOKS=false
 make run
 ```
 

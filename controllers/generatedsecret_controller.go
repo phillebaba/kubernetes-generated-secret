@@ -1,25 +1,7 @@
-/*
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package controllers
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
-	"math/big"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -29,27 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1alpha1 "github.com/phillebaba/kubernetes-generated-secret/api/v1alpha1"
+	"github.com/phillebaba/kubernetes-generated-secret/crypto"
 )
-
-// https://gist.github.com/denisbrodbeck/635a644089868a51eccd6ae22b2eb800
-func generateRandomASCIIString(length int) (string, error) {
-	result := ""
-	for {
-		if len(result) >= length {
-			return result, nil
-		}
-		num, err := rand.Int(rand.Reader, big.NewInt(int64(127)))
-		if err != nil {
-			return "", err
-		}
-		n := num.Int64()
-		// Make sure that the number/byte/letter is inside
-		// the range of printable ASCII characters (excluding space and DEL)
-		if n > 32 && n < 127 {
-			result += string(n)
-		}
-	}
-}
 
 // GeneratedSecretReconciler reconciles a GeneratedSecret object
 type GeneratedSecretReconciler struct {
@@ -68,7 +31,6 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 	// Get the reconciled GeneratedSecret
 	var gs corev1alpha1.GeneratedSecret
 	if err := r.Get(ctx, req.NamespacedName, &gs); err != nil {
-		log.Error(err, "unable to fetch GeneratedSecret")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -85,8 +47,11 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 	// Generate secrets values
 	secretData := make(map[string][]byte)
 	for _, d := range gs.Spec.DataList {
-		randString, _ := generateRandomASCIIString(*d.Length)
-		randString = base64.URLEncoding.EncodeToString([]byte(randString))
+		randString, err := crypto.GenerateRandomASCIIString(d.Length, d.ValueOptions)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
 		secretData[d.Key] = []byte(randString)
 	}
 

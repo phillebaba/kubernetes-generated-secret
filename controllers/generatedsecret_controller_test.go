@@ -1,23 +1,7 @@
-/*
-
-licensed under the apache license, version 2.0 (the "license");
-you may not use this file except in compliance with the license.
-you may obtain a copy of the license at
-
-    http://www.apache.org/licenses/license-2.0
-
-unless required by applicable law or agreed to in writing, software
-distributed under the license is distributed on an "as is" basis,
-without warranties or conditions of any kind, either express or implied.
-see the license for the specific language governing permissions and
-limitations under the license.
-*/
-
 package controllers
 
 import (
 	"context"
-	"encoding/base64"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -44,24 +28,23 @@ var _ = Describe("Generated Secret Controller", func() {
 	Context("Simple Secret", func() {
 		It("Should create successfully", func() {
 			key := types.NamespacedName{
-				Name:      "foo",
+				Name:      "default",
 				Namespace: "default",
 			}
 
-			length := int(8)
 			created := &corev1alpha1.GeneratedSecret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
 					Namespace: key.Namespace,
 				},
 				Spec: corev1alpha1.GeneratedSecretSpec{
-					DataList: []corev1alpha1.GeneratedSecretData{{Length: &length, Key: "foo"}},
 					SecretMeta: metav1.ObjectMeta{
 						Name:        "try to override",
 						Namespace:   "dummy",
 						Labels:      map[string]string{"test": "label"},
 						Annotations: map[string]string{"test": "annotations"},
 					},
+					DataList: []corev1alpha1.GeneratedSecretData{{Key: "foo", Length: 50, ValueOptions: []corev1alpha1.ValueOption{"Uppercase", "Lowercase", "Numbers", "Symbols"}}},
 				},
 			}
 
@@ -71,11 +54,9 @@ var _ = Describe("Generated Secret Controller", func() {
 			// Get generated secret
 			By("Expecting secret to be created")
 			f := &corev1.Secret{}
-			Eventually(func() bool {
-				k8sClient.Get(context.Background(), key, f)
-				decoded, _ := base64.StdEncoding.DecodeString(string(f.Data["foo"]))
-				return len(string(decoded)) == length
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), key, f)
+			}, timeout, interval).Should(Succeed())
 			Expect(f.ObjectMeta.Name).To(Equal(key.Name))
 			Expect(f.ObjectMeta.Namespace).To(Equal(key.Namespace))
 			Expect(f.ObjectMeta.Labels).To(Equal(created.Spec.SecretMeta.Labels))
