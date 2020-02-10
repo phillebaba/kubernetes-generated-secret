@@ -2,13 +2,15 @@ package controllers
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	corev1alpha1 "github.com/phillebaba/kubernetes-generated-secret/api/v1alpha1"
 	"github.com/phillebaba/kubernetes-generated-secret/crypto"
@@ -26,7 +28,6 @@ type GeneratedSecretReconciler struct {
 
 func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.Log.WithValues("generatedsecret", req.NamespacedName)
 
 	// Get the reconciled GeneratedSecret
 	var gs corev1alpha1.GeneratedSecret
@@ -34,46 +35,36 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Make sure secret does not already exist
-	var es corev1.Secret
-	err := r.Get(ctx, req.NamespacedName, &es)
-	if err != nil && apierrs.IsNotFound(err) == false {
-		return ctrl.Result{}, err
-	}
-	if apierrs.IsNotFound(err) == false && &es != nil {
-		return ctrl.Result{}, err
-	}
+	s := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: gs.Name, Namespace: gs.Namespace}}
+	_, err := ctrl.CreateOrUpdate(ctx, r, &s, func() error {
+		sm := *gs.Spec.SecretMeta.DeepCopy()
+		sm.Name = gs.Name
+		sm.Namespace = gs.Namespace
+		s.ObjectMeta = sm
 
-	// Generate secrets values
-	secretData := make(map[string][]byte)
-	for _, d := range gs.Spec.DataList {
-		randString, err := crypto.GenerateRandomASCIIString(d.Length, d.ValueOptions)
-		if err != nil {
-			return ctrl.Result{}, err
+		// Generate secret data
+		sd := make(map[string][]byte)
+		for _, d := range gs.Spec.DataList {
+			// Skip if value already exists
+			if val, ok := s.Data[d.Key]; ok {
+				sd[d.Key] = val
+				continue
+			}
+
+			randString, err := crypto.GenerateRandomASCIIString(d.Length, d.ValueOptions)
+			if err != nil {
+				return err
+			}
+
+			sd[d.Key] = []byte(randString)
 		}
+		s.Data = sd
+		return controllerutil.SetControllerReference(&gs, &s, r.Scheme)
+	})
 
-		secretData[d.Key] = []byte(randString)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "unable to create or update Secret")
 	}
-
-	// Create secret resource
-	omc := *gs.Spec.SecretMeta.DeepCopy()
-	omc.Name = gs.Name
-	omc.Namespace = gs.Namespace
-	s := &corev1.Secret{
-		ObjectMeta: omc,
-		Data:       secretData,
-	}
-
-	if err := ctrl.SetControllerReference(&gs, s, r.Scheme); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if err := r.Create(ctx, s); err != nil {
-		log.Error(err, "unable to create Secret for GeneratedSecret", "secret", s)
-		return ctrl.Result{}, err
-	}
-
-	log.V(1).Info("created Secret from GeneratedSecret", "secret", s)
 
 	return ctrl.Result{}, nil
 }

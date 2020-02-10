@@ -38,20 +38,12 @@ var _ = Describe("Generated Secret Controller", func() {
 					Namespace: key.Namespace,
 				},
 				Spec: corev1alpha1.GeneratedSecretSpec{
-					SecretMeta: metav1.ObjectMeta{
-						Name:        "try to override",
-						Namespace:   "dummy",
-						Labels:      map[string]string{"test": "label"},
-						Annotations: map[string]string{"test": "annotations"},
-					},
 					DataList: []corev1alpha1.GeneratedSecretData{{Key: "foo", Length: 50, ValueOptions: []corev1alpha1.ValueOption{"Uppercase", "Lowercase", "Numbers", "Symbols"}}},
 				},
 			}
 
 			// Create
 			Expect(k8sClient.Create(context.Background(), created)).Should(Succeed())
-
-			// Get generated secret
 			By("Expecting secret to be created")
 			f := &corev1.Secret{}
 			Eventually(func() error {
@@ -61,6 +53,32 @@ var _ = Describe("Generated Secret Controller", func() {
 			Expect(f.ObjectMeta.Namespace).To(Equal(key.Namespace))
 			Expect(f.ObjectMeta.Labels).To(Equal(created.Spec.SecretMeta.Labels))
 			Expect(f.ObjectMeta.Annotations).To(Equal(created.Spec.SecretMeta.Annotations))
+			Expect(len(f.Data)).To(Equal(len(created.Spec.DataList)))
+
+			// Update
+			updated := &corev1alpha1.GeneratedSecret{}
+			Expect(k8sClient.Get(context.Background(), key, updated)).Should(Succeed())
+
+			updated.Spec.SecretMeta = metav1.ObjectMeta{
+				Name:        "override-name",
+				Namespace:   "override-namespace",
+				Labels:      map[string]string{"test": "label"},
+				Annotations: map[string]string{"test": "annotations"},
+			}
+			updated.Spec.DataList = append(updated.Spec.DataList, corev1alpha1.GeneratedSecretData{Key: "bar", Length: 50, ValueOptions: []corev1alpha1.ValueOption{"Uppercase"}})
+			Expect(k8sClient.Update(context.Background(), updated)).Should(Succeed())
+
+			time.Sleep(100 * time.Millisecond)
+
+			By("Expecting secret to be updated")
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), key, f)
+			}, timeout, interval).Should(Succeed())
+			Expect(f.ObjectMeta.Name).To(Equal(key.Name))
+			Expect(f.ObjectMeta.Namespace).To(Equal(key.Namespace))
+			Expect(f.ObjectMeta.Labels).To(Equal(updated.Spec.SecretMeta.Labels))
+			Expect(f.ObjectMeta.Annotations).To(Equal(updated.Spec.SecretMeta.Annotations))
+			Expect(len(f.Data)).To(Equal(len(updated.Spec.DataList)))
 
 			// Delete
 			By("Expecting to delete successfully")
