@@ -41,9 +41,8 @@ type GeneratedSecretData struct {
 	ValueOptions []ValueOption `json:"options,uniqueItems"`
 }
 
-// +kubebuilder:subresource:data
-
 // GeneratedSecretSpec defines the desired state of GeneratedSecret
+// +kubebuilder:subresource:data
 type GeneratedSecretSpec struct {
 	// Addtional metadata to add to the generated secret.
 	// +optional
@@ -53,24 +52,17 @@ type GeneratedSecretSpec struct {
 	DataList []GeneratedSecretData `json:"data"`
 }
 
-// GeneratedSecretStatus defines the observed state of GeneratedSecret
-type GeneratedSecretStatus struct {
-}
-
-// +kubebuilder:object:root=true
-
 // GeneratedSecret is the Schema for the generatedsecrets API
+// +kubebuilder:object:root=true
 type GeneratedSecret struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GeneratedSecretSpec   `json:"spec,omitempty"`
-	Status GeneratedSecretStatus `json:"status,omitempty"`
+	Spec GeneratedSecretSpec `json:"spec,omitempty"`
 }
 
-// +kubebuilder:object:root=true
-
 // GeneratedSecretList contains a list of GeneratedSecret
+// +kubebuilder:object:root=true
 type GeneratedSecretList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
