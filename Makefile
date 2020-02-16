@@ -14,8 +14,12 @@ endif
 all: manager
 
 # Run tests
-test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
+test: generate fmt vet manifests validate
+	go test ./...
+
+# Validate manifests
+validate: kustomize kubeval
+	$(KUSTOMIZE) build config/default | $(KUBEVAL) --ignore-missing-schemas
 
 # Build manager binary
 manager: generate fmt vet
@@ -26,21 +30,21 @@ run: generate fmt vet manifests
 	go run ./main.go
 
 # Install CRDs into a cluster
-install: manifests
-	kustomize build config/crd | kubectl apply -f -
+install: manifests kustomize
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 # Uninstall CRDs from a cluster
-uninstall: manifests
-	kustomize build config/crd | kubectl delete -f -
+uninstall: manifests kustomize
+	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests
-	cd config/manager && kustomize edit set image controller=${IMG}
-	kustomize build config/default | kubectl apply -f -
+deploy: manifests kustomize
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
 fmt:
@@ -77,4 +81,36 @@ ifeq (, $(shell which controller-gen))
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
+endif
+
+kubeval:
+# find or download kubeval
+ifeq (, $(shell which kubeval))
+	@{ \
+	set -e ;\
+	KUBEVAL_TMP_DIR=$$(mktemp -d) ;\
+	cd $$KUBEVAL_TMP_DIR ;\
+	go mod init tmp ;\
+	go get github.com/instrumenta/kubeval@0.14.0 ;\
+	rm -rf $$KUBEVAL_TMP_DIR ;\
+	}
+KUBEVAL=$(GOBIN)/kubeval
+else
+KUBEVAL=$(shell which kubeval)
+endif
+
+kustomize:
+# find or download kustomize
+ifeq (, $(shell which kustomize))
+	@{ \
+	set -e ;\
+	KUSTOMIZE_TMP_DIR=$$(mktemp -d) ;\
+	cd $$KUSTOMIZE_TMP_DIR ;\
+	go mod init tmp ;\
+	go get sigs.k8s.io/kustomize/kustomize/v3@v3.3.0 ;\
+	rm -rf $$KUSTOMIZE_TMP_DIR ;\
+	}
+KUSTOMIZE=$(GOBIN)/kustomize
+else
+KUSTOMIZE=$(shell which kustomize)
 endif

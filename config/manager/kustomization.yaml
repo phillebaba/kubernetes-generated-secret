@@ -3,6 +3,5 @@ kind: Kustomization
 resources:
 - manager.yaml
 images:
-- name: controller
-  newName: controller
-  newTag: master
+- name: phillebaba/kubernetes-generated-secret
+  newTag: v0.1.0
