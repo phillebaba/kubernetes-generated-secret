@@ -29,16 +29,19 @@ func (c ValueOption) Regex() string {
 	}
 }
 
+// GeneratedSecretData defines the configuration for the secret
 type GeneratedSecretData struct {
 	// Key of the secret
 	Key string `json:"key"`
 
 	// Wanted length of the secret value
+	// +optional
 	// +kubebuilder:validation:Minimum=1
-	Length int `json:"length"`
+	Length *int `json:"length,omitempty"`
 
 	// Options to apply to the generated secret value
-	ValueOptions []ValueOption `json:"options,uniqueItems"`
+	// +optional
+	ValueOptions *[]ValueOption `json:"options,uniqueItems,omitempty"`
 }
 
 // GeneratedSecretSpec defines the desired state of GeneratedSecret

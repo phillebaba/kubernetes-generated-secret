@@ -24,25 +24,32 @@ kustomize build config/default | kubectl apply -f -
 A `Secret` is generated from a `GeneratedSecret` that configures the length, character content, and additional metadata of the secret. The `GeneratedSecret` is the parent of the `Secret` it creates, meaning that the `Secret` will be deleted when the `GeneratedSecret` is deleted.
 
 ### Simple random secret
-Below is all you need to generate a `Secret` with a random value. It contains a data field in the spec that specifies the key length and value options for the generated value.
+Below is all you need to generate a `Secret` with a random value. The name and namespace will be inherited by the created `Secret`. The data field in the `GeneratedSecret` maps to the data field in the `Secret`, meaning that the specified key will be created.
 ```yaml
 apiVersion: core.phillebaba.io/v1alpha1
 kind: GeneratedSecret
 metadata:
   name: generatedsecret-sample
+  namespace: default
 spec:
   data:
   - key: test
-    length: 100
-    options:
-      - Uppercase
-      - Lowercase
-      - Numbers
-      - Symbols
 ```
 
-### Secret metadata
-There is an optional `secretMetadata` that can be set. The metadata specified will propogate to the generated `Secret` with the exception of the name and namespace which is inherited by the parent `GeneratedSecret`.
+The resulting `Secret` will look like the one below.
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: generatedsecret-sample
+  namespace: default
+spec:
+  data:
+    test: <RANDOM_VALUE>
+```
+
+### Configuration
+There is an optional `secretMetadata` that can be set. The metadata specified will propogate to the generated `Secret` with the exception of the name and namespace which is inherited by the parent `GeneratedSecret`. Additionally the length and characters used in the secret can also be set.
 ```yaml
 apiVersion: core.phillebaba.io/v1alpha1
 kind: GeneratedSecret
@@ -62,12 +69,13 @@ spec:
       - Symbols
 ```
 
-The resulting `Secret` will look like shown below.
+The metadata will be propogated to the `Secret`.
 ```yaml
 apiVersion: v1
 kind: Secret
 metadata:
   name: generatedsecret-sample
+  namespace: default
   labels:
     app: foobar
 spec:

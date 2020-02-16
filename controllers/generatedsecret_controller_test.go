@@ -38,7 +38,7 @@ var _ = Describe("Generated Secret Controller", func() {
 					Namespace: key.Namespace,
 				},
 				Spec: corev1alpha1.GeneratedSecretSpec{
-					DataList: []corev1alpha1.GeneratedSecretData{{Key: "foo", Length: 50, ValueOptions: []corev1alpha1.ValueOption{"Uppercase", "Lowercase", "Numbers", "Symbols"}}},
+					DataList: []corev1alpha1.GeneratedSecretData{{Key: "foo"}},
 				},
 			}
 
@@ -65,7 +65,7 @@ var _ = Describe("Generated Secret Controller", func() {
 				Labels:      map[string]string{"test": "label"},
 				Annotations: map[string]string{"test": "annotations"},
 			}
-			updated.Spec.DataList = append(updated.Spec.DataList, corev1alpha1.GeneratedSecretData{Key: "bar", Length: 50, ValueOptions: []corev1alpha1.ValueOption{"Uppercase"}})
+			updated.Spec.DataList = append(updated.Spec.DataList, corev1alpha1.GeneratedSecretData{Key: "bar"})
 			Expect(k8sClient.Update(context.Background(), updated)).Should(Succeed())
 
 			time.Sleep(100 * time.Millisecond)

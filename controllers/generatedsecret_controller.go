@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"context"
-	"github.com/pkg/errors"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,10 +29,18 @@ type GeneratedSecretReconciler struct {
 func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 
-	// Get the reconciled GeneratedSecret
 	var gs corev1alpha1.GeneratedSecret
 	if err := r.Get(ctx, req.NamespacedName, &gs); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if ok := checkAndSetDefaults(&gs); ok == false {
+		if err := r.Update(ctx, &gs); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		r.Log.Info("Setting default values and requeueing")
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	s := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: gs.Name, Namespace: gs.Namespace}}
@@ -51,7 +59,7 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 				continue
 			}
 
-			randString, err := crypto.GenerateRandomASCIIString(d.Length, d.ValueOptions)
+			randString, err := crypto.GenerateRandomASCIIString(*d.Length, *d.ValueOptions)
 			if err != nil {
 				return err
 			}
@@ -74,4 +82,25 @@ func (r *GeneratedSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&corev1alpha1.GeneratedSecret{}).
 		Owns(&corev1.Secret{}).
 		Complete(r)
+}
+
+// Checks if all values are set and sets them if not
+func checkAndSetDefaults(gs *corev1alpha1.GeneratedSecret) bool {
+	ok := true
+
+	for i := 0; i < len(gs.Spec.DataList); i++ {
+		d := &gs.Spec.DataList[i]
+
+		if d.Length == nil {
+			length := int(10)
+			d.Length = &length
+			ok = false
+		}
+		if d.ValueOptions == nil {
+			d.ValueOptions = &[]corev1alpha1.ValueOption{"Uppercase", "Lowercase", "Numbers", "Symbols"}
+			ok = false
+		}
+	}
+
+	return ok
 }
