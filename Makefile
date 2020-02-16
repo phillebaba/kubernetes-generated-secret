@@ -1,4 +1,4 @@
-TAG = $(shell git describe --exact-match | git describe --always --dirty)
+TAG = $(shell git describe --tags --exact-match || git describe --always --dirty)
 IMG ?= phillebaba/kubernetes-generated-secret:$(TAG)
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -60,10 +60,12 @@ generate: controller-gen
 
 # Build the docker image
 docker-build: test
+	echo $(TAG)
 	docker build . -t ${IMG}
 
 # Push the docker image
 docker-push:
+	echo $(TAG)
 	docker push ${IMG}
 
 # find or download controller-gen
