@@ -39,7 +39,7 @@ type GeneratedSecretData struct {
 	// +kubebuilder:validation:Minimum=1
 	Length *int `json:"length,omitempty"`
 
-	// Options to apply to the generated secret value
+	// List of characters to exclude from the secret value
 	// +optional
 	Exclude []CharacterOption `json:"exclude,uniqueItems,omitempty"`
 }
