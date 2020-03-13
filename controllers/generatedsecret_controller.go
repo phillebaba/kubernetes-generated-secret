@@ -60,7 +60,7 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 				continue
 			}
 
-			randString, err := crypto.GenerateRandomASCIIString(*d.Length, *d.ValueOptions)
+			randString, err := crypto.GenerateRandomASCIIString(*d.Length, d.Exclude)
 			if err != nil {
 				return err
 			}
@@ -95,10 +95,6 @@ func checkAndSetDefaults(gs *corev1alpha1.GeneratedSecret) bool {
 		if d.Length == nil {
 			length := int(10)
 			d.Length = &length
-			ok = false
-		}
-		if d.ValueOptions == nil {
-			d.ValueOptions = &[]corev1alpha1.ValueOption{"Uppercase", "Lowercase", "Numbers", "Symbols"}
 			ok = false
 		}
 	}

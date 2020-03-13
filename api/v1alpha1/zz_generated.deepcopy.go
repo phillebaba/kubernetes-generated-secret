@@ -42,14 +42,10 @@ func (in *GeneratedSecretData) DeepCopyInto(out *GeneratedSecretData) {
 		*out = new(int)
 		**out = **in
 	}
-	if in.ValueOptions != nil {
-		in, out := &in.ValueOptions, &out.ValueOptions
-		*out = new([]ValueOption)
-		if **in != nil {
-			in, out := *in, *out
-			*out = make([]ValueOption, len(*in))
-			copy(*out, *in)
-		}
+	if in.Exclude != nil {
+		in, out := &in.Exclude, &out.Exclude
+		*out = make([]CharacterOption, len(*in))
+		copy(*out, *in)
 	}
 }
 
