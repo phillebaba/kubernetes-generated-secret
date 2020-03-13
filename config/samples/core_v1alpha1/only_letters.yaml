@@ -1,7 +1,11 @@
 apiVersion: core.phillebaba.io/v1alpha1
 kind: GeneratedSecret
 metadata:
-  name: minimal
+  name: only-letters
 spec:
   data:
   - key: test
+    length: 100
+    exclude:
+    - Numbers
+    - Symbols

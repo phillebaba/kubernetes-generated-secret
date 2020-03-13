@@ -1,13 +1,11 @@
 apiVersion: core.phillebaba.io/v1alpha1
 kind: GeneratedSecret
 metadata:
-  name: generatedsecret-sample
+  name: no-letters
 spec:
   data:
   - key: test
     length: 100
-    options:
-      - Uppercase
-      - Lowercase
-      - Numbers
-      - Symbols
+    exclude:
+    - Uppercase
+    - Lowercase

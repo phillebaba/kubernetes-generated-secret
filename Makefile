@@ -15,7 +15,7 @@ all: manager
 
 # Run tests
 test: generate fmt vet manifests validate
-	go test ./...
+	go test ./... $(TEST_FLAGS)
 
 # Validate manifests
 validate: kustomize kubeval

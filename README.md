@@ -62,7 +62,7 @@ spec:
   data:
   - key: test
     length: 100
-    options:
+    exclude:
       - Uppercase
       - Lowercase
       - Numbers
@@ -94,12 +94,12 @@ spec:
   data:
   - key: foo
     length: 100
-    options:
+    exclude:
       - Uppercase
       - Lowercase
   - key: bar
     length: 50
-    options:
+    exclude:
       - Numbers
       - Symbols
 ```

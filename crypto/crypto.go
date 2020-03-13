@@ -9,10 +9,10 @@ import (
 	v1alpha1 "github.com/phillebaba/kubernetes-generated-secret/api/v1alpha1"
 )
 
-// https://gist.github.com/denisbrodbeck/635a644089868a51eccd6ae22b2eb800
-func GenerateRandomASCIIString(length int, options []v1alpha1.ValueOption) (string, error) {
-	if len(options) == 0 {
-		return "", errors.New("option list can't be empty")
+// Generates a random string of given length, excludes characters that matches any of the options.
+func GenerateRandomASCIIString(length int, options []v1alpha1.CharacterOption) (string, error) {
+	if len(options) == 4 {
+		return "", errors.New("can't exclude all character types")
 	}
 
 	result := ""
@@ -32,7 +32,7 @@ func GenerateRandomASCIIString(length int, options []v1alpha1.ValueOption) (stri
 		}
 
 		c := string(n)
-		if matchesOptions(c, options) == false {
+		if matchesOptions(c, options) {
 			continue
 		}
 
@@ -40,8 +40,8 @@ func GenerateRandomASCIIString(length int, options []v1alpha1.ValueOption) (stri
 	}
 }
 
-// Checks if chartacter matches options regex
-func matchesOptions(char string, options []v1alpha1.ValueOption) bool {
+// Checks if chartacter matches options regex.
+func matchesOptions(char string, options []v1alpha1.CharacterOption) bool {
 	result := false
 	for _, o := range options {
 		validChar := regexp.MustCompile(o.Regex())

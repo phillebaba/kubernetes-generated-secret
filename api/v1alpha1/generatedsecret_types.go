@@ -5,7 +5,7 @@ import (
 )
 
 // +kubebuilder:validation:Enum=Uppercase;Lowercase;Numbers;Symbols
-type ValueOption string
+type CharacterOption string
 
 const (
 	Uppercase = "Uppercase"
@@ -14,7 +14,7 @@ const (
 	Symbols   = "Symbols"
 )
 
-func (c ValueOption) Regex() string {
+func (c CharacterOption) Regex() string {
 	switch c {
 	case Uppercase:
 		return "[A-Z]"
@@ -23,7 +23,7 @@ func (c ValueOption) Regex() string {
 	case Numbers:
 		return "[0-9]"
 	case Symbols:
-		return "[!#$%&()*+,-./:;<=>?@[\\]^_`{|}~]"
+		return "[^a-zA-Z0-9]"
 	default:
 		return ""
 	}
@@ -39,9 +39,9 @@ type GeneratedSecretData struct {
 	// +kubebuilder:validation:Minimum=1
 	Length *int `json:"length,omitempty"`
 
-	// Options to apply to the generated secret value
+	// List of characters to exclude from the secret value
 	// +optional
-	ValueOptions *[]ValueOption `json:"options,uniqueItems,omitempty"`
+	Exclude []CharacterOption `json:"exclude,uniqueItems,omitempty"`
 }
 
 // GeneratedSecretSpec defines the desired state of GeneratedSecret
