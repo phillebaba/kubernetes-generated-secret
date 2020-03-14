@@ -55,13 +55,21 @@ type GeneratedSecretSpec struct {
 	DataList []GeneratedSecretData `json:"data"`
 }
 
+type GeneratedSecretStatus struct {
+	State string `json:"state"`
+}
+
 // GeneratedSecret is the Schema for the generatedsecrets API
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.state"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type GeneratedSecret struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec GeneratedSecretSpec `json:"spec,omitempty"`
+	Spec   GeneratedSecretSpec   `json:"spec,omitempty"`
+	Status GeneratedSecretStatus `json:"status,omitempty"`
 }
 
 // GeneratedSecretList contains a list of GeneratedSecret

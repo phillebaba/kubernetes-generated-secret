@@ -17,21 +17,17 @@ var _ = Describe("Generated Secret Controller", func() {
 	const timeout = time.Second * 30
 	const interval = time.Second * 1
 
-	BeforeEach(func() {
+	Context("New Cluster", func() {
+		ctx := context.TODO()
+		ns := SetupTest(ctx)
 
-	})
-
-	AfterEach(func() {
-
-	})
-
-	Context("Simple Secret", func() {
-		It("Should create successfully", func() {
+		It("Should create, update, and delete successfully", func() {
 			key := types.NamespacedName{
 				Name:      "default",
-				Namespace: "default",
+				Namespace: ns.Name,
 			}
 
+			By("Expecting secret to be created")
 			created := &corev1alpha1.GeneratedSecret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
@@ -41,24 +37,22 @@ var _ = Describe("Generated Secret Controller", func() {
 					DataList: []corev1alpha1.GeneratedSecretData{{Key: "foo"}},
 				},
 			}
+			Expect(k8sClient.Create(ctx, created)).Should(Succeed())
+			Eventually(func() *corev1.Secret {
+				s := &corev1.Secret{}
+				_ = k8sClient.Get(ctx, key, s)
+				return s
+			}, timeout, interval).Should(SatisfyAll(
+				WithTransform(func(e *corev1.Secret) string { return e.Name }, Equal(key.Name)),
+				WithTransform(func(e *corev1.Secret) string { return e.Namespace }, Equal(key.Namespace)),
+				WithTransform(func(e *corev1.Secret) map[string]string { return e.Labels }, Equal(created.Spec.SecretMeta.Labels)),
+				WithTransform(func(e *corev1.Secret) map[string]string { return e.Annotations }, Equal(created.Spec.SecretMeta.Annotations)),
+				WithTransform(func(e *corev1.Secret) int { return len(e.Data) }, Equal(len(created.Spec.DataList))),
+			))
 
-			// Create
-			Expect(k8sClient.Create(context.Background(), created)).Should(Succeed())
-			By("Expecting secret to be created")
-			f := &corev1.Secret{}
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), key, f)
-			}, timeout, interval).Should(Succeed())
-			Expect(f.ObjectMeta.Name).To(Equal(key.Name))
-			Expect(f.ObjectMeta.Namespace).To(Equal(key.Namespace))
-			Expect(f.ObjectMeta.Labels).To(Equal(created.Spec.SecretMeta.Labels))
-			Expect(f.ObjectMeta.Annotations).To(Equal(created.Spec.SecretMeta.Annotations))
-			Expect(len(f.Data)).To(Equal(len(created.Spec.DataList)))
-
-			// Update
+			By("Expecting secret to be updated")
 			updated := &corev1alpha1.GeneratedSecret{}
-			Expect(k8sClient.Get(context.Background(), key, updated)).Should(Succeed())
-
+			Expect(k8sClient.Get(ctx, key, updated)).Should(Succeed())
 			updated.Spec.SecretMeta = metav1.ObjectMeta{
 				Name:        "override-name",
 				Namespace:   "override-namespace",
@@ -66,33 +60,83 @@ var _ = Describe("Generated Secret Controller", func() {
 				Annotations: map[string]string{"test": "annotations"},
 			}
 			updated.Spec.DataList = append(updated.Spec.DataList, corev1alpha1.GeneratedSecretData{Key: "bar"})
-			Expect(k8sClient.Update(context.Background(), updated)).Should(Succeed())
+			Expect(k8sClient.Update(ctx, updated)).Should(Succeed())
 
-			time.Sleep(100 * time.Millisecond)
+			Eventually(func() *corev1.Secret {
+				s := &corev1.Secret{}
+				_ = k8sClient.Get(ctx, key, s)
+				return s
+			}, timeout, interval).Should(SatisfyAll(
+				WithTransform(func(e *corev1.Secret) string { return e.Name }, Equal(key.Name)),
+				WithTransform(func(e *corev1.Secret) string { return e.Namespace }, Equal(key.Namespace)),
+				WithTransform(func(e *corev1.Secret) map[string]string { return e.Labels }, Equal(updated.Spec.SecretMeta.Labels)),
+				WithTransform(func(e *corev1.Secret) map[string]string { return e.Annotations }, Equal(updated.Spec.SecretMeta.Annotations)),
+				WithTransform(func(e *corev1.Secret) int { return len(e.Data) }, Equal(len(updated.Spec.DataList))),
+			))
 
-			By("Expecting secret to be updated")
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), key, f)
-			}, timeout, interval).Should(Succeed())
-			Expect(f.ObjectMeta.Name).To(Equal(key.Name))
-			Expect(f.ObjectMeta.Namespace).To(Equal(key.Namespace))
-			Expect(f.ObjectMeta.Labels).To(Equal(updated.Spec.SecretMeta.Labels))
-			Expect(f.ObjectMeta.Annotations).To(Equal(updated.Spec.SecretMeta.Annotations))
-			Expect(len(f.Data)).To(Equal(len(updated.Spec.DataList)))
-
-			// Delete
 			By("Expecting to delete successfully")
 			Eventually(func() error {
 				f := &corev1alpha1.GeneratedSecret{}
-				k8sClient.Get(context.Background(), key, f)
-				return k8sClient.Delete(context.Background(), f)
+				k8sClient.Get(ctx, key, f)
+				return k8sClient.Delete(ctx, f)
 			}, timeout, interval).Should(Succeed())
-
-			By("Expecting to delete finish")
 			Eventually(func() error {
 				f := &corev1alpha1.GeneratedSecret{}
-				return k8sClient.Get(context.Background(), key, f)
+				return k8sClient.Get(ctx, key, f)
 			}, timeout, interval).ShouldNot(Succeed())
+		})
+	})
+
+	Context("Cluster with existing secret", func() {
+		ctx := context.TODO()
+		ns := SetupTest(ctx)
+
+		It("Should not override existing secrets", func() {
+			key := types.NamespacedName{
+				Name:      "default",
+				Namespace: ns.Name,
+			}
+
+			By("Adding secret that will conflict")
+			existingSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      key.Name,
+					Namespace: key.Namespace,
+				},
+			}
+			Expect(k8sClient.Create(ctx, existingSecret)).Should(Succeed())
+
+			By("Creating generated secret that conflicts")
+			generatedSecret := &corev1alpha1.GeneratedSecret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      key.Name,
+					Namespace: key.Namespace,
+				},
+				Spec: corev1alpha1.GeneratedSecretSpec{
+					DataList: []corev1alpha1.GeneratedSecretData{{Key: "foo"}},
+				},
+			}
+			Expect(k8sClient.Create(context.Background(), generatedSecret)).Should(Succeed())
+
+			By("Making sure secret is not overriden")
+			Eventually(func() string {
+				gs := &corev1alpha1.GeneratedSecret{}
+				_ = k8sClient.Get(ctx, key, gs)
+				return gs.Status.State
+			}, timeout, interval).Should(Equal("Conflict"))
+			s := &corev1.Secret{}
+			Expect(k8sClient.Get(ctx, key, s)).Should(Succeed())
+			Expect(len(s.Data)).To(Equal(0))
+
+			By("Deleting existing secret")
+			s = &corev1.Secret{}
+			Expect(k8sClient.Get(ctx, key, s)).Should(Succeed())
+			Expect(k8sClient.Delete(ctx, s)).Should(Succeed())
+			Eventually(func() string {
+				gs := &corev1alpha1.GeneratedSecret{}
+				_ = k8sClient.Get(ctx, key, gs)
+				return gs.Status.State
+			}, timeout, interval).Should(Equal("Generated"))
 		})
 	})
 })
