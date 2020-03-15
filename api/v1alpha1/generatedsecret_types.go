@@ -8,10 +8,10 @@ import (
 type CharacterOption string
 
 const (
-	Uppercase = "Uppercase"
-	Lowercase = "Lowercase"
-	Numbers   = "Numbers"
-	Symbols   = "Symbols"
+	Uppercase CharacterOption = "Uppercase"
+	Lowercase CharacterOption = "Lowercase"
+	Numbers   CharacterOption = "Numbers"
+	Symbols   CharacterOption = "Symbols"
 )
 
 func (c CharacterOption) Regex() string {
@@ -55,13 +55,31 @@ type GeneratedSecretSpec struct {
 	DataList []GeneratedSecretData `json:"data"`
 }
 
+// +kubebuilder:validation:Enum=Generating;Generated;Failed;Conflict
+type GeneratedSecretState string
+
+const (
+	Generating GeneratedSecretState = "Generating"
+	Generated  GeneratedSecretState = "Generated"
+	Failed     GeneratedSecretState = "Failed"
+	Conflict   GeneratedSecretState = "Conflict"
+)
+
+type GeneratedSecretStatus struct {
+	State GeneratedSecretState `json:"state"`
+}
+
 // GeneratedSecret is the Schema for the generatedsecrets API
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.state"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type GeneratedSecret struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec GeneratedSecretSpec `json:"spec,omitempty"`
+	Spec   GeneratedSecretSpec   `json:"spec,omitempty"`
+	Status GeneratedSecretStatus `json:"status,omitempty"`
 }
 
 // GeneratedSecretList contains a list of GeneratedSecret
