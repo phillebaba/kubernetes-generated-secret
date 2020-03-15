@@ -41,14 +41,14 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (result ctrl.Res
 	// Set GeneratedSecret status
 	defer func() {
 		if err != nil {
-			gs.Status.State = "Error"
+			gs.Status.State = corev1alpha1.Failed
 		}
 
 		r.Status().Update(ctx, gs)
 	}()
 
 	if gs.Status.State == "" {
-		gs.Status.State = "Generating"
+		gs.Status.State = corev1alpha1.Generating
 		err := r.Status().Update(ctx, gs)
 		if err != nil {
 			return ctrl.Result{}, err
@@ -72,7 +72,7 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (result ctrl.Res
 		return ctrl.Result{}, err
 	}
 	if apierrors.IsNotFound(err) == false && hasOwnerReference(gs.UID, s.ObjectMeta.OwnerReferences) == false {
-		gs.Status.State = "Conflict"
+		gs.Status.State = corev1alpha1.Conflict
 		return ctrl.Result{Requeue: true}, nil
 	}
 
@@ -102,7 +102,7 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (result ctrl.Res
 		}
 		s.Data = sd
 
-		gs.Status.State = "Generated"
+		gs.Status.State = corev1alpha1.Generated
 		return controllerutil.SetControllerReference(gs, s, r.Scheme)
 	})
 

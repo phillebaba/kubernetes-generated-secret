@@ -119,11 +119,11 @@ var _ = Describe("Generated Secret Controller", func() {
 			Expect(k8sClient.Create(context.Background(), generatedSecret)).Should(Succeed())
 
 			By("Making sure secret is not overriden")
-			Eventually(func() string {
+			Eventually(func() corev1alpha1.GeneratedSecretState {
 				gs := &corev1alpha1.GeneratedSecret{}
 				_ = k8sClient.Get(ctx, key, gs)
 				return gs.Status.State
-			}, timeout, interval).Should(Equal("Conflict"))
+			}, timeout, interval).Should(Equal(corev1alpha1.Conflict))
 			s := &corev1.Secret{}
 			Expect(k8sClient.Get(ctx, key, s)).Should(Succeed())
 			Expect(len(s.Data)).To(Equal(0))
@@ -132,11 +132,11 @@ var _ = Describe("Generated Secret Controller", func() {
 			s = &corev1.Secret{}
 			Expect(k8sClient.Get(ctx, key, s)).Should(Succeed())
 			Expect(k8sClient.Delete(ctx, s)).Should(Succeed())
-			Eventually(func() string {
+			Eventually(func() corev1alpha1.GeneratedSecretState {
 				gs := &corev1alpha1.GeneratedSecret{}
 				_ = k8sClient.Get(ctx, key, gs)
 				return gs.Status.State
-			}, timeout, interval).Should(Equal("Generated"))
+			}, timeout, interval).Should(Equal(corev1alpha1.Generated))
 		})
 	})
 })

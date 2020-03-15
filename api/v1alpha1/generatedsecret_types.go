@@ -8,10 +8,10 @@ import (
 type CharacterOption string
 
 const (
-	Uppercase = "Uppercase"
-	Lowercase = "Lowercase"
-	Numbers   = "Numbers"
-	Symbols   = "Symbols"
+	Uppercase CharacterOption = "Uppercase"
+	Lowercase CharacterOption = "Lowercase"
+	Numbers   CharacterOption = "Numbers"
+	Symbols   CharacterOption = "Symbols"
 )
 
 func (c CharacterOption) Regex() string {
@@ -55,8 +55,18 @@ type GeneratedSecretSpec struct {
 	DataList []GeneratedSecretData `json:"data"`
 }
 
+// +kubebuilder:validation:Enum=Generating;Generated;Failed;Conflict
+type GeneratedSecretState string
+
+const (
+	Generating GeneratedSecretState = "Generating"
+	Generated  GeneratedSecretState = "Generated"
+	Failed     GeneratedSecretState = "Failed"
+	Conflict   GeneratedSecretState = "Conflict"
+)
+
 type GeneratedSecretStatus struct {
-	State string `json:"state"`
+	State GeneratedSecretState `json:"state"`
 }
 
 // GeneratedSecret is the Schema for the generatedsecrets API
