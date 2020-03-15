@@ -60,12 +60,10 @@ generate: controller-gen
 
 # Build the docker image
 docker-build: test
-	echo $(TAG)
 	docker build . -t ${IMG}
 
 # Push the docker image
 docker-push:
-	echo $(TAG)
 	docker push ${IMG}
 
 # find or download controller-gen

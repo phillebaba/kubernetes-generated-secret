@@ -1,8 +1,14 @@
 sudo: true
 services: docker
+
 language: go
 go:
   - 1.14
+
+cache:
+  directories:
+    - $GOPATH/pkg/mod
+
 git:
   depth: 50
 
@@ -18,8 +24,7 @@ script:
 
 deploy:
   provider: script
-  script:
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    - make docker-push
+  skip_cleanup: true
+  script: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin && make docker-push
   on:
     branch: master
