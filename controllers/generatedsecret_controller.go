@@ -25,10 +25,10 @@ type GeneratedSecretReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+// Reconcile implements the reconciliation loop for the operator
 // +kubebuilder:rbac:groups=core.phillebaba.io,resources=generatedsecrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core.phillebaba.io,resources=generatedsecrets/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
-
 func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (result ctrl.Result, err error) {
 	ctx := context.Background()
 
@@ -113,6 +113,7 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (result ctrl.Res
 	return ctrl.Result{}, nil
 }
 
+// SetupWithManager adds the controller manager
 func (r *GeneratedSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1alpha1.GeneratedSecret{}).
@@ -120,7 +121,7 @@ func (r *GeneratedSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// Checks if OwnerReferences contains UID
+// hasOwnerReference returns true if OwnerReferences contains UID
 func hasOwnerReference(UID types.UID, ownerReferences []metav1.OwnerReference) bool {
 	has := false
 	for _, ownerReference := range ownerReferences {
@@ -132,7 +133,7 @@ func hasOwnerReference(UID types.UID, ownerReferences []metav1.OwnerReference) b
 	return has
 }
 
-// Checks if all values are set and sets them if not
+// checkAndSetDefaults checks if all values are set and sets them if not
 func checkAndSetDefaults(gs *corev1alpha1.GeneratedSecret) bool {
 	ok := true
 

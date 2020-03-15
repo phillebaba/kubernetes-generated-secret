@@ -9,7 +9,7 @@ import (
 	v1alpha1 "github.com/phillebaba/kubernetes-generated-secret/api/v1alpha1"
 )
 
-// Generates a random string of given length, excludes characters that matches any of the options.
+// GenerateRandomASCIIString generates a random string of given length, excludes characters that matches any of the options.
 func GenerateRandomASCIIString(length int, options []v1alpha1.CharacterOption) (string, error) {
 	if len(options) == 4 {
 		return "", errors.New("can't exclude all character types")
@@ -40,7 +40,7 @@ func GenerateRandomASCIIString(length int, options []v1alpha1.CharacterOption) (
 	}
 }
 
-// Checks if chartacter matches options regex.
+// matchesOptions hecks if chartacter matches options regex.
 func matchesOptions(char string, options []v1alpha1.CharacterOption) bool {
 	result := false
 	for _, o := range options {

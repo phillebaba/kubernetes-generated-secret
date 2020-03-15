@@ -4,6 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// CharacterOption represents filtering options for a generated string.
 // +kubebuilder:validation:Enum=Uppercase;Lowercase;Numbers;Symbols
 type CharacterOption string
 
@@ -14,6 +15,7 @@ const (
 	Symbols   CharacterOption = "Symbols"
 )
 
+// Regex returns filter used for each CharacterOption.
 func (c CharacterOption) Regex() string {
 	switch c {
 	case Uppercase:
@@ -29,7 +31,7 @@ func (c CharacterOption) Regex() string {
 	}
 }
 
-// GeneratedSecretData defines the configuration for the secret
+// GeneratedSecretData defines the configuration of the secret.
 type GeneratedSecretData struct {
 	// Key of the secret
 	Key string `json:"key"`
@@ -55,6 +57,7 @@ type GeneratedSecretSpec struct {
 	DataList []GeneratedSecretData `json:"data"`
 }
 
+// GeneratedSecretState represents the current state of a GeneratedSecret.
 // +kubebuilder:validation:Enum=Generating;Generated;Failed;Conflict
 type GeneratedSecretState string
 
@@ -65,6 +68,7 @@ const (
 	Conflict   GeneratedSecretState = "Conflict"
 )
 
+// GeneratedSecretStatus defines the status of GeneratedSecret
 type GeneratedSecretStatus struct {
 	State GeneratedSecretState `json:"state"`
 }
