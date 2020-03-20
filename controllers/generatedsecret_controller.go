@@ -72,6 +72,7 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (result ctrl.Res
 		return ctrl.Result{}, err
 	}
 	if apierrors.IsNotFound(err) == false && hasOwnerReference(gs.UID, s.ObjectMeta.OwnerReferences) == false {
+		r.Log.Info("Conflicting Secret exists to the one meant to be generated", "secret", s.Namespace+"/"+s.Name)
 		gs.Status.State = corev1alpha1.Conflict
 		return ctrl.Result{Requeue: true}, nil
 	}
@@ -110,6 +111,7 @@ func (r *GeneratedSecretReconciler) Reconcile(req ctrl.Request) (result ctrl.Res
 		return ctrl.Result{}, errors.Wrap(err, "unable to create or update Secret")
 	}
 
+	r.Log.Info("Created or Updated secret", "secret", s.Namespace+"/"+s.Name)
 	return ctrl.Result{}, nil
 }
 
