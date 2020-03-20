@@ -4,4 +4,4 @@ resources:
 - manager.yaml
 images:
 - name: phillebaba/kubernetes-generated-secret
-  newTag: v0.1.1
+  newTag: v0.2.0
