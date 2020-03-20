@@ -27,4 +27,4 @@ deploy:
   skip_cleanup: true
   script: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin && make docker-push
   on:
-    branch: master
+    tags: true
