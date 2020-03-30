@@ -63,10 +63,7 @@ spec:
   - key: test
     length: 100
     exclude:
-      - Uppercase
-      - Lowercase
-      - Numbers
-      - Symbols
+    - Uppercase
 ```
 
 The metadata will be propogated to the `Secret`.
@@ -95,13 +92,13 @@ spec:
   - key: foo
     length: 100
     exclude:
-      - Uppercase
-      - Lowercase
+    - Uppercase
+    - Lowercase
   - key: bar
     length: 50
     exclude:
-      - Numbers
-      - Symbols
+    - Numbers
+    - Symbols
 ```
 
 Each key will receive a different random value.
